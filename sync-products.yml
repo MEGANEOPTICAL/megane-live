@@ -1,0 +1,24 @@
+name: Sync MEGANE catalogue
+on:
+  schedule:
+    - cron: '0 18 * * *'   # daily ~4am Melbourne
+  workflow_dispatch: {}     # run manually from the Actions tab any time
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm init -y && npm i playwright
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/sync-products.mjs
+      - name: Commit if changed
+        run: |
+          git config user.name "megane-sync-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add products.json
+          git diff --cached --quiet || git commit -m "Catalogue sync $(date -u +%F)"
+          git push
