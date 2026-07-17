@@ -19,7 +19,9 @@ const splitName = (name) => {
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
-await page.goto(SHOP_URL, { waitUntil: 'networkidle', timeout: 90000 });
+await page.goto(SHOP_URL, { waitUntil: 'domcontentloaded', timeout: 90000 });
+/* Wix never goes network-idle (trackers/chat) — wait for the product grid instead */
+await page.waitForSelector('[data-hook="product-item-root"], li[data-hook="product-list-grid-item"]', { timeout: 60000 });
 
 /* click "Load More" until the whole catalogue is on the page */
 for (let i = 0; i < 20; i++) {
