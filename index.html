@@ -573,15 +573,19 @@
 
   /* ---------- footer ---------- */
   footer{border-top:1px solid var(--line);}
-  .foot-rights{display:block;font-size:10px;letter-spacing:.08em;color:var(--ink-soft);margin-top:4px;text-transform:none;}
   .foot{
-    display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
-    padding:28px 0;font-family:var(--disp);font-size:11.5px;
+    display:flex;align-items:center;justify-content:space-between;gap:14px 28px;flex-wrap:wrap;
+    padding-top:30px;padding-bottom:calc(30px + env(safe-area-inset-bottom));
+    font-family:var(--disp);font-size:11px;
     letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);
   }
-  .foot nav{display:flex;gap:24px;flex-wrap:wrap;}
-  .foot a{padding:8px 0;}
+  .foot nav{display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
+  .foot a{padding:8px 0;display:flex;align-items:center;}
   .foot a:hover{color:var(--ink);}
+  @media(max-width:640px){
+    .foot{flex-direction:column;justify-content:center;text-align:center;gap:10px;}
+    .foot nav{justify-content:center;}
+  }
   /* ---------- Sabae dark panel + gallery ---------- */
   .panel.dark{border-color:var(--line-light);}
   .dark .jp-rail{color:var(--ivory);border-color:var(--line-light);}
@@ -706,6 +710,20 @@
   @media (prefers-reduced-motion:reduce){
     .hero-left h1{animation:none;}
     .reveal .section-title .w{opacity:1;transform:none;transition:none;}
+  }
+
+  /* ---------- round-18 fixes ---------- */
+  .news-row button:disabled{opacity:.35;cursor:not-allowed;}
+  .care-list .jp{white-space:nowrap;flex-shrink:0;margin-left:14px;}
+  @media(max-width:820px){
+    .care-grid .btn{display:flex;width:100%;justify-content:center;text-align:center;box-sizing:border-box;}
+  }
+  @media(max-width:720px){
+    .int-img{
+      margin-left:calc(-1 * clamp(20px,4vw,56px));
+      margin-right:calc(-1 * clamp(20px,4vw,56px));
+      border-left:none;border-right:none;
+    }
   }
 
   /* ---------- premium refinements ---------- */
@@ -1019,8 +1037,8 @@
     <h2 class="section-title">Quiet updates, a few times a year.</h2>
     <p>New arrivals from Japan, restocks, and opening news — one email a month at most.</p>
     <div class="news-row">
-      <input type="email" placeholder="Email address" aria-label="Email address">
-      <button type="button" onclick="this.textContent='Subscribed ✓'">Subscribe</button>
+      <input type="email" id="nl-email" placeholder="Email address" aria-label="Email address">
+      <button type="button" id="nl-btn" disabled onclick="this.textContent='Subscribed ✓'">Subscribe</button>
     </div>
   </div>
 </section>
@@ -1213,7 +1231,6 @@
           <li>$0 out-of-pocket standard eye exams</li>
           <li>5% off complete prescription pairs</li>
         </ul>
-        <a class="btn btn-solid" href="" data-member target="_blank" rel="noopener">Join Essential</a>
       </div>
       <div class="plan featured">
         <span class="plan-tag">Most popular</span>
@@ -1225,7 +1242,6 @@
           <li>1 × OCT &amp; retinal imaging scan</li>
           <li>2 × clinical care items included</li>
         </ul>
-        <a class="btn btn-solid" href="" data-member target="_blank" rel="noopener">Join Advanced</a>
       </div>
       <div class="plan">
         <h3>Complete Care</h3>
@@ -1236,10 +1252,10 @@
           <li>Unlimited OCT &amp; retinal imaging</li>
           <li>Specialised clinical items fully covered</li>
         </ul>
-        <a class="btn btn-solid" href="" data-member target="_blank" rel="noopener">Join Complete</a>
       </div>
     </div>
-    <p class="grid-note">Full inclusions are shown at sign-up. Joining opens secure payment on our store in a new tab.</p>
+    <p style="margin-top:26px;text-align:center;"><a class="btn btn-solid" href="" data-member target="_blank" rel="noopener">Choose your plan on the online store <span aria-hidden="true">→</span></a></p>
+    <p class="grid-note" style="text-align:center;">Full inclusions are shown at sign-up — payment opens in a new tab, this page stays here.</p>
   </div>
 </section>
 
@@ -1290,12 +1306,12 @@
 
 <footer>
   <div class="wrap foot">
-    <span>© MEGANE OPTICAL PTY LTD. All rights reserved.<span class="foot-rights"> Images and video are the property of MEGANE and may not be reproduced without permission.</span></span>
+    <span>© MEGANE OPTICAL PTY LTD. All rights reserved.</span>
     <nav aria-label="Footer" style="align-items:center;">
       <a data-nav="about">About</a>
       <a href="mailto:enquiry@megane.com.au">Contact</a>
       <a>Privacy</a>
-      <a id="ig-link" target="_blank" rel="noopener" aria-label="Instagram" style="display:flex;align-items:center;">
+      <a id="ig-link" href="https://www.instagram.com/megane_optometry/" target="_blank" rel="noopener" aria-label="Instagram" style="display:flex;align-items:center;">
         <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
       </a>
     </nav>
@@ -1312,7 +1328,7 @@
     <p>Join the MEGANE list for opening news and new arrivals from Japan — your first-order code arrives by email.</p>
     <div class="news-row">
       <input type="email" id="lb-email" placeholder="Email address" aria-label="Email address">
-      <button type="button" id="lb-sub">Sign up</button>
+      <button type="button" id="lb-sub" disabled>Sign up</button>
     </div>
     <p class="fine">One email a month at most. Unsubscribe anytime.</p>
   </div>
@@ -1336,6 +1352,9 @@ const BOOKING_URL   = "https://app.ooptify.com/bookings?locationId=b9f726b2-f9c2
 const SHOP_BASE     = "https://shop.megane.com.au";
 const SHOP_ALL      = SHOP_BASE + "/category/all-products";
 const MEMBER_URL    = SHOP_BASE + "/pricing-plans/plans-pricing";
+/* direct per-plan checkout links (Wix dashboard → Pricing Plans → plan → Share).
+   When filled, Join buttons skip the duplicate plans page and go straight to checkout. */
+const PLAN_URLS     = { essential:"", advanced:"", complete:"" };
 const INSTAGRAM_URL = "https://www.instagram.com/megane_optometry/";
 const VIDEO_URL     = "https://video.wixstatic.com/video/533739_262f574784d64a28a8786ea6b5cf6e0a/1080p/mp4/file.mp4";
 const GALLERY       = [   /* Sabae craftsmanship photos (hero image excluded to avoid duplication) */
@@ -1348,9 +1367,9 @@ const LENS_VIDEOS   = {
   "TOKAI":"https://video.wixstatic.com/video/533739_d1bacbed14bf4585afe715d7096e5165/1080p/mp4/file.mp4"
 };
 const STORE_PHOTO   = "";  /* shopfront photo for the homepage feature slot */
-const BRAND_IMG_POS = { "DITA":"center bottom" };   /* per-brand crop focus tweaks */
+const BRAND_IMG_POS = { };   /* per-brand crop focus tweaks, e.g. {"DITA":"center bottom"} */
 const BRAND_IMAGES  = {
-  "DITA":"https://static.wixstatic.com/media/533739_09b848c1899e4b02b518fb20a4aca014~mv2.jpg/v1/fill/w_900,h_460,al_b,q_88/533739_09b848c1899e4b02b518fb20a4aca014~mv2.jpg",
+  "DITA":"https://static.wixstatic.com/media/533739_aaf7ff52832e41a59064221903c20895~mv2.jpg",
   "EYEVAN":"https://static.wixstatic.com/media/533739_7acd21565c6d450fa219f7b101f07799~mv2.jpg",
   "Kaneko Optical":"https://static.wixstatic.com/media/533739_a4c2e604b9d64b68954e46b49520f5fc~mv2.jpg",
   "Leowl in eye":"https://static.wixstatic.com/media/533739_97a7447b2605466e8e2d3e17e8a3e526~mv2.jpg",
@@ -1588,6 +1607,7 @@ if(lvEntries.length){
 }
 /* Wix store + membership links */
 document.querySelectorAll('[data-member]').forEach(a=>a.href=MEMBER_URL);
+document.querySelectorAll('[data-plan]').forEach(a=>a.href=PLAN_URLS[a.dataset.plan]||MEMBER_URL);
 document.querySelectorAll('[data-shop-all]').forEach(a=>a.href=SHOP_ALL);
 /* Instagram */
 const ig=document.getElementById('ig-link');
@@ -1642,7 +1662,15 @@ function showPage(p){
   closeMenu();
   window.scrollTo(0,0);
   observeReveals();
+  try{ history.replaceState(null,'', p==='home' ? location.pathname : '#'+p); }catch(e){}
 }
+/* deep links: megane.com.au/#brands etc. open the right page (used by the shop's menu) */
+function goHash(){
+  const h=(location.hash||'').replace('#','');
+  if(h && document.getElementById('page-'+h)) showPage(h);
+}
+window.addEventListener('hashchange',goHash);
+goHash();
 document.addEventListener('click',e=>{
   const t=e.target.closest('[data-nav]');
   if(!t) return;
@@ -1678,6 +1706,15 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeProduct(); })
 /* deter casual saving of media */
 document.addEventListener('contextmenu',e=>{ if(e.target.closest('img,video')) e.preventDefault(); });
 document.addEventListener('dragstart',e=>{ if(e.target.closest('img')) e.preventDefault(); });
+
+/* subscribe buttons require a valid email first */
+function gateEmail(inputEl,btnEl){
+  if(!inputEl||!btnEl) return;
+  const upd=()=>{btnEl.disabled=!/.+@.+\..+/.test(inputEl.value.trim());};
+  inputEl.addEventListener('input',upd); upd();
+}
+gateEmail(document.getElementById('nl-email'),document.getElementById('nl-btn'));
+gateEmail(document.getElementById('lb-email'),document.getElementById('lb-sub'));
 
 /* word-by-word rise for section titles inside reveals */
 document.querySelectorAll('.reveal .section-title').forEach(h=>{
