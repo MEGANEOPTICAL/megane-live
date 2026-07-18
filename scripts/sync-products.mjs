@@ -21,7 +21,7 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
 await page.goto(SHOP_URL, { waitUntil: 'domcontentloaded', timeout: 90000 });
 /* Wix never goes network-idle (trackers/chat) — wait for the product grid instead */
-await page.waitForSelector('[data-hook="product-item-root"], li[data-hook="product-list-grid-item"]', { timeout: 60000 });
+await page.waitForSelector('[data-hook="product-item-root"]', { timeout: 60000 });
 
 /* click "Load More" until the whole catalogue is on the page */
 for (let i = 0; i < 20; i++) {
@@ -32,7 +32,7 @@ for (let i = 0; i < 20; i++) {
 }
 await page.waitForTimeout(1500);
 
-const items = await page.$$eval('[data-hook="product-item-root"], li[data-hook="product-list-grid-item"]', els =>
+const items = await page.$$eval('[data-hook="product-item-root"]', els =>
   els.map(el => {
     const q = sel => el.querySelector(sel);
     const name  = q('[data-hook="product-item-name"]')?.textContent?.trim() || '';
@@ -45,8 +45,10 @@ const items = await page.$$eval('[data-hook="product-item-root"], li[data-hook="
 );
 await browser.close();
 
+const seenNames = new Set();
 const products = items
   .filter(p => p.name)
+  .filter(p => { const k = p.name + '|' + p.price; if (seenNames.has(k)) return false; seenNames.add(k); return true; })
   .map(p => {
     const { brand, model } = splitName(p.name);
     const price = parseFloat((p.price.match(/[\d,]+(\.\d+)?/) || ['0'])[0].replace(/,/g, '')) || null;
