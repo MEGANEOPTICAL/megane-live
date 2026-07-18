@@ -1091,7 +1091,6 @@
       Made in Japan, stocked in small numbers, and fitted in store. Every frame
       below is available on our secure online store.
     </p>
-    <p style="margin-top:18px;"><a class="btn btn-solid" href="" data-shop-all target="_blank" rel="noopener">Buy on the online store</a></p>
   </div>
   <div class="wrap shop-layout" style="padding-bottom:clamp(56px,9vh,110px);">
     <aside class="shop-side">
@@ -1270,7 +1269,7 @@
           <li>$0 out-of-pocket standard eye exams</li>
           <li>5% off complete prescription pairs</li>
         </ul>
-        <a class="btn btn-solid plan-join" data-plan="essential" href="" target="_blank" rel="noopener">Join Essential</a>
+        <a class="btn btn-solid plan-join" data-plan="essential" href="">Join Essential</a>
       </div>
       <div class="plan featured">
         <span class="plan-tag">Most popular</span>
@@ -1282,7 +1281,7 @@
           <li>1 × OCT &amp; retinal imaging scan</li>
           <li>2 × clinical care items included</li>
         </ul>
-        <a class="btn btn-solid plan-join" data-plan="advanced" href="" target="_blank" rel="noopener">Join Advanced</a>
+        <a class="btn btn-solid plan-join" data-plan="advanced" href="">Join Advanced</a>
       </div>
       <div class="plan">
         <h3>Complete Care</h3>
@@ -1293,11 +1292,10 @@
           <li>Unlimited OCT &amp; retinal imaging</li>
           <li>Specialised clinical items fully covered</li>
         </ul>
-        <a class="btn btn-solid plan-join" data-plan="complete" href="" target="_blank" rel="noopener">Join Complete</a>
+        <a class="btn btn-solid plan-join" data-plan="complete" href="">Join Complete</a>
       </div>
     </div>
-    <p style="margin-top:26px;text-align:center;"><a class="btn btn-solid" href="" data-member target="_blank" rel="noopener">Choose your plan on the online store <span aria-hidden="true">→</span></a></p>
-    <p class="grid-note" style="text-align:center;">Full inclusions are shown at sign-up — payment opens in a new tab, this page stays here.</p>
+    <p class="grid-note" style="text-align:center;">Full inclusions are shown at checkout.</p>
   </div>
 </section>
 
@@ -1357,7 +1355,7 @@
       <p class="pm-price" id="pm-price"></p>
       <p class="pm-note">Made in Japan · fitted in store · lifetime servicing</p>
       <button class="btn btn-solid" id="pm-add" type="button" hidden>Add to cart</button>
-      <a class="btn btn-solid" id="pm-buy" target="_blank" rel="noopener">Buy on the online store</a>
+      <a class="btn btn-solid" id="pm-buy">Buy on the online store</a>
       <p class="book-note" id="pm-note" style="margin-top:12px;">Opens our store in a new tab — this page stays right here.</p>
     </div>
   </div>
@@ -1415,7 +1413,10 @@ const MEMBER_URL    = SHOP_BASE + "/pricing-plans/plans-pricing";
    When filled, Join buttons skip the duplicate plans page and go straight to checkout. */
 const PLAN_URLS     = { essential:"", advanced:"", complete:"" };
 const WIX_CLIENT_ID = "12d75b6a-9d07-4c46-9e7a-3efea62728c9";  /* Wix Headless OAuth app */
-const NEWSLETTER_ENDPOINT = "";  /* e.g. a Formspree form URL — until set, Subscribe is visual only */
+const NEWSLETTER_ENDPOINT = "";  /* plan B: a Formspree form URL */
+/* ▼▼ NEWSLETTER — WIX FORM ID ▼▼  paste the GUID from the Wix Forms dashboard URL between the quotes */
+const WIX_NEWSLETTER_FORM_ID = "48179b9b-984c-4882-b5c7-02488c92e848";
+/* ▲▲ NEWSLETTER — WIX FORM ID ▲▲ */
 const INSTAGRAM_URL = "https://www.instagram.com/megane_optometry/";
 const VIDEO_URL     = "https://video.wixstatic.com/video/533739_262f574784d64a28a8786ea6b5cf6e0a/1080p/mp4/file.mp4";
 const GALLERY       = [   /* Sabae craftsmanship photos (hero image excluded to avoid duplication) */
@@ -1590,6 +1591,8 @@ fetch('products.json',{cache:'no-store'})
   .then(r=>r.ok?r.json():null)
   .then(data=>{
     if(!Array.isArray(data)||!data.length) return;
+    const seen=new Set();
+    data=data.filter(p=>{const k=p.brand+'|'+p.model+'|'+p.price;if(seen.has(k))return false;seen.add(k);return true;});
     PRODUCTS.length=0; data.forEach(p=>PRODUCTS.push(p));
     makers.length=0; makers.push('All Products',...new Set(PRODUCTS.map(p=>p.brand)));
     renderSide(); renderShop();
@@ -1736,7 +1739,7 @@ document.addEventListener('click',e=>{
   const t=e.target.closest('[data-nav]');
   if(!t) return;
   e.preventDefault();
-  if(t.dataset.nav==='booking' && BOOKING_URL){ closeMenu(); window.open(BOOKING_URL,'_blank','noopener'); return; }
+  if(t.dataset.nav==='booking' && BOOKING_URL){ closeMenu(); location.href=BOOKING_URL; return; }
   if(t.dataset.maker){                       /* brand page → pre-filtered shop */
     activeMaker=t.dataset.maker;
     renderSide(); renderShop();
@@ -1756,7 +1759,7 @@ function openProduct(i){
   const live=wixLive();
   const add=document.getElementById('pm-add'), buy=document.getElementById('pm-buy'), note=document.getElementById('pm-note');
   add.hidden=!live||!!p.oos; buy.style.display=(live&&!p.oos)?'none':'';
-  note.textContent = live&&!p.oos ? 'Added items wait in your cart — checkout goes straight to payment.' : 'Opens our store in a new tab — this page stays right here.';
+  note.textContent = live&&!p.oos ? 'Added items wait in your cart — checkout goes straight to payment.' : 'Continues on our online store.';
   buy.href=SHOP_ALL;
   add.textContent='Add to cart';
   add.onclick=async ()=>{
@@ -1765,7 +1768,7 @@ function openProduct(i){
     catch(err){
       const u=window.MGN_CART&&window.MGN_CART.slugUrl(p.brand,p.model);
       add.textContent='Add to cart';
-      window.open(u||SHOP_ALL,'_blank','noopener');   /* frame needs options — pick them on the product page */
+      location.href=u||SHOP_ALL;   /* frame needs options — pick them on the product page */
     }
   };
   pmodal.hidden=false; document.body.style.overflow='hidden';
@@ -1836,9 +1839,10 @@ document.addEventListener('click',async e=>{
   if(q){ try{
       const c=await window.MGN_CART.get();
       const li=(c.lineItems||[]).find(x=>x._id===q.dataset.li);
-      const nq=Math.max(0,(li?li.quantity:1)+ +q.dataset.cq);
-      if(nq===0) await window.MGN_CART.remove(q.dataset.li);
-      else await window.MGN_CART.setQty(q.dataset.li,nq);
+      if(!li){ renderCartDrawer(); return; }
+      const nq=Math.max(0,li.quantity+ +q.dataset.cq);
+      if(nq===0) await window.MGN_CART.remove(li._id);
+      else await window.MGN_CART.setLine(li,nq);
     }catch(err){} renderCartDrawer(); return; }
   const r=e.target.closest('[data-crm]');
   if(r){ try{ await window.MGN_CART.remove(r.dataset.crm); }catch(err){} renderCartDrawer(); }
@@ -1846,7 +1850,7 @@ document.addEventListener('click',async e=>{
 document.getElementById('cd-checkout').addEventListener('click',async function(){
   this.textContent='Opening checkout…';
   try{ await window.MGN_CART.checkout(); }
-  catch(e){ this.textContent='Checkout'; window.open(SHOP_ALL,'_blank','noopener'); }
+  catch(e){ this.textContent='Checkout'; location.href=SHOP_ALL; }
 });
 window.addEventListener('mgn-wix-ready',()=>{
   cartBtn.hidden=false;
@@ -1859,19 +1863,26 @@ document.addEventListener('click',e=>{
   e.preventDefault();
   const orig=pj.textContent;
   pj.textContent='Opening checkout…';
-  window.MGN_PLANS.join(pj.dataset.plan).catch(()=>{ pj.textContent=orig; window.open(MEMBER_URL,'_blank','noopener'); });
+  window.MGN_PLANS.join(pj.dataset.plan).catch(()=>{ pj.textContent=orig; location.href=MEMBER_URL; });
 });
 
-/* newsletter: post to endpoint when configured */
+/* newsletter delivery: Wix Form → Formspree → visual-only */
+function deliverEmail(email){
+  if(window.MGN_NEWS) return window.MGN_NEWS.subscribe(email);
+  if(NEWSLETTER_ENDPOINT) return fetch(NEWSLETTER_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({email})}).then(r=>{if(!r.ok)throw 0;});
+  return Promise.resolve();  /* nothing connected yet */
+}
 document.getElementById('nl-btn').addEventListener('click',function(){
   const email=document.getElementById('nl-email').value.trim();
   const btn=this;
-  if(NEWSLETTER_ENDPOINT){
-    btn.disabled=true; btn.textContent='…';
-    fetch(NEWSLETTER_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({email})})
-      .then(r=>{btn.textContent=r.ok?'Subscribed ✓':'Try again';btn.disabled=r.ok;})
-      .catch(()=>{btn.textContent='Try again';btn.disabled=false;});
-  }
+  btn.disabled=true; btn.textContent='…';
+  deliverEmail(email)
+    .then(()=>{btn.textContent='Subscribed ✓';})
+    .catch(()=>{btn.textContent='Try again';btn.disabled=false;});
+});
+document.getElementById('lb-sub').addEventListener('click',function(){
+  const email=(document.getElementById('lb-email')||{}).value||'';
+  if(email.trim()) deliverEmail(email.trim()).catch(()=>{});
 });
 
 /* subscribe buttons require a valid email first */
@@ -1907,12 +1918,13 @@ observeReveals();
   const fixHost = u => (u || "").replace(/^https:\/\/(www\.)?megane\.com\.au/i, SHOP);
   if (!CLIENT_ID) return;
   try {
-    const [sdk, storesMod, ecomMod, redirMod, plansMod] = await Promise.all([
+    const [sdk, storesMod, ecomMod, redirMod, plansMod, formsMod] = await Promise.all([
       import("https://esm.sh/@wix/sdk@1"),
       import("https://esm.sh/@wix/stores@1"),
       import("https://esm.sh/@wix/ecom@1"),
       import("https://esm.sh/@wix/redirects@1"),
       import("https://esm.sh/@wix/pricing-plans@1"),
+      import("https://esm.sh/@wix/forms@1"),
     ]);
     let tokens = null;
     try { tokens = JSON.parse(localStorage.getItem("mgn-wix-tokens") || "null"); } catch (e) {}
@@ -1923,6 +1935,7 @@ observeReveals();
         currentCart: ecomMod.currentCart,
         redirects: redirMod.redirects,
         plans: plansMod.plans,
+        submissions: formsMod.submissions,
       },
     });
     if (!tokens) {
@@ -1956,8 +1969,18 @@ observeReveals();
         });
       },
       async get() { try { return await wix.currentCart.getCurrentCart(); } catch (e) { return null; } },
-      async setQty(lineItemId, q) {
-        await wix.currentCart.updateCurrentCartLineItemQuantity([{ _id: lineItemId, id: lineItemId, quantity: q }]);
+      async setLine(li, q) {
+        try {
+          await wix.currentCart.updateCurrentCartLineItemQuantity([{ _id: li._id, id: li._id, quantity: q }]);
+          const c = await this.get();
+          const now = ((c && c.lineItems) || []).find(x => x._id === li._id);
+          if (now && now.quantity === q) return;
+        } catch (e) {}
+        /* update no-op'd — rebuild the line with the endpoints that provably work */
+        try { await wix.currentCart.removeLineItemsFromCurrentCart([li._id]); } catch (e) {}
+        if (q > 0 && li.catalogReference) {
+          await wix.currentCart.addToCurrentCart({ lineItems: [{ catalogReference: li.catalogReference, quantity: q }] });
+        }
       },
       async remove(lineItemId) {
         await wix.currentCart.removeLineItemsFromCurrentCart([lineItemId]);
@@ -1975,9 +1998,16 @@ observeReveals();
     /* membership plans: name-fragment -> direct plan checkout */
     let planList = [];
     try {
-      const pr = await wix.plans.queryPublicPlans().find();
-      planList = pr.items || pr.plans || [];
-    } catch (e) { console.warn("plans query failed", e); }
+      const r = await wix.plans.listPublicPlans();
+      planList = r.plans || r.items || [];
+    } catch (e) { console.warn("listPublicPlans failed", e); }
+    if (!planList.length) {
+      try {
+        const q = wix.plans.queryPublicPlans();
+        const r = (q && typeof q.find === "function") ? await q.find() : await q;
+        planList = r.items || r.plans || [];
+      } catch (e) { console.warn("queryPublicPlans failed", e); }
+    }
     window.MGN_PLANS = {
       list: planList,
       async join(frag) {
@@ -1990,6 +2020,28 @@ observeReveals();
         location.href = fixHost(redirectSession.fullUrl);
       },
     };
+
+    /* newsletter → Wix Forms (lands in the site's Contacts, marked subscribed) */
+    const NL_FORM = (typeof WIX_NEWSLETTER_FORM_ID !== "undefined" && WIX_NEWSLETTER_FORM_ID) ? WIX_NEWSLETTER_FORM_ID : "";
+    if (NL_FORM) {
+      window.MGN_NEWS = {
+        async subscribe(email) {
+          const keys = [];
+          const saved = localStorage.getItem("mgn-nl-key");
+          if (saved) keys.push(saved);
+          ["email", "emailAddress", "email_1"].forEach(k => { if (!keys.includes(k)) keys.push(k); });
+          let lastErr;
+          for (const k of keys) {
+            try {
+              await wix.submissions.createSubmission({ formId: NL_FORM, submissions: { [k]: email } });
+              localStorage.setItem("mgn-nl-key", k);
+              return true;
+            } catch (e) { lastErr = e; }
+          }
+          throw lastErr;
+        },
+      };
+    }
 
     document.documentElement.classList.add("wix-live");
     window.dispatchEvent(new Event("mgn-wix-ready"));
