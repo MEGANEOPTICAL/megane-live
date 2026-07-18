@@ -1764,7 +1764,7 @@ function openProduct(i){
   add.textContent='Add to cart';
   add.onclick=async ()=>{
     add.textContent='Adding…';
-    try{ await window.MGN_CART.add(p.brand,p.model); closeProduct(); openCart(); }
+    try{ const cart=await window.MGN_CART.add(p.brand,p.model); closeProduct(); openCart(cart||undefined); }
     catch(err){
       const u=window.MGN_CART&&window.MGN_CART.slugUrl(p.brand,p.model);
       add.textContent='Add to cart';
@@ -1819,33 +1819,35 @@ function cartItemHTML(li){
     <span class="cd-p">${price}</span>
   </div>`;
 }
-async function renderCartDrawer(){
+async function renderCartDrawer(pre){
   const box=document.getElementById('cd-items');
   try{
-    const c=await window.MGN_CART.get();
+    const c=pre || await window.MGN_CART.get();
     const items=(c&&c.lineItems)||[];
     box.innerHTML=items.length?items.map(cartItemHTML).join(''):'<p class="cd-empty">Your cart is empty — the shelf is not.</p>';
     const sub=c&&c.subtotal&&c.subtotal.amount?('$'+c.subtotal.amount):'—';
     document.getElementById('cd-total').textContent=sub;
+    const n=items.reduce((t,i)=>t+(i.quantity||0),0);
+    const b=document.getElementById('cart-n');
+    b.hidden=!n; b.textContent=n;
   }catch(e){ box.innerHTML='<p class="cd-empty">Cart unavailable right now.</p>'; }
-  refreshCartBadge();
 }
-function openCart(){ cdrawer.hidden=false; document.body.style.overflow='hidden'; renderCartDrawer(); }
+function openCart(cart){ cdrawer.hidden=false; document.body.style.overflow='hidden'; renderCartDrawer(cart); }
 function closeCart(){ cdrawer.hidden=true; document.body.style.overflow=''; }
 cartBtn.addEventListener('click',openCart);
 document.addEventListener('click',async e=>{
   if(e.target.closest('[data-ccl]')){ closeCart(); return; }
   const q=e.target.closest('[data-cq]');
-  if(q){ try{
+  if(q){ let next=null; try{
       const c=await window.MGN_CART.get();
       const li=(c.lineItems||[]).find(x=>x._id===q.dataset.li);
       if(!li){ renderCartDrawer(); return; }
       const nq=Math.max(0,li.quantity+ +q.dataset.cq);
-      if(nq===0) await window.MGN_CART.remove(li._id);
-      else await window.MGN_CART.setLine(li,nq);
-    }catch(err){} renderCartDrawer(); return; }
+      next = (nq===0) ? await window.MGN_CART.remove(li._id)
+                      : await window.MGN_CART.setLine(li,nq);
+    }catch(err){} renderCartDrawer(next||undefined); return; }
   const r=e.target.closest('[data-crm]');
-  if(r){ try{ await window.MGN_CART.remove(r.dataset.crm); }catch(err){} renderCartDrawer(); }
+  if(r){ let next=null; try{ next=await window.MGN_CART.remove(r.dataset.crm); }catch(err){} renderCartDrawer(next||undefined); }
 });
 document.getElementById('cd-checkout').addEventListener('click',async function(){
   this.textContent='Opening checkout…';
@@ -1883,6 +1885,13 @@ document.getElementById('nl-btn').addEventListener('click',function(){
 document.getElementById('lb-sub').addEventListener('click',function(){
   const email=(document.getElementById('lb-email')||{}).value||'';
   if(email.trim()) deliverEmail(email.trim()).catch(()=>{});
+});
+
+/* returning via browser Back restores the page from cache — reset transient labels */
+window.addEventListener('pageshow',e=>{
+  if(!e.persisted) return;
+  document.querySelectorAll('.plan-join').forEach(a=>{a.textContent='Join '+a.dataset.plan.charAt(0).toUpperCase()+a.dataset.plan.slice(1);});
+  const co=document.getElementById('cd-checkout'); if(co) co.textContent='Checkout';
 });
 
 /* subscribe buttons require a valid email first */
@@ -1964,26 +1973,30 @@ observeReveals();
       async add(brand, model) {
         const hit = this._find(brand, model);
         if (!hit) throw new Error("not in catalogue");
-        await wix.currentCart.addToCurrentCart({
+        const r = await wix.currentCart.addToCurrentCart({
           lineItems: [{ catalogReference: { appId: STORES_APP, catalogItemId: hit.id }, quantity: 1 }],
         });
+        return (r && r.cart) || null;
       },
       async get() { try { return await wix.currentCart.getCurrentCart(); } catch (e) { return null; } },
       async setLine(li, q) {
         try {
-          await wix.currentCart.updateCurrentCartLineItemQuantity([{ _id: li._id, id: li._id, quantity: q }]);
-          const c = await this.get();
-          const now = ((c && c.lineItems) || []).find(x => x._id === li._id);
-          if (now && now.quantity === q) return;
+          const r = await wix.currentCart.updateCurrentCartLineItemQuantity([{ _id: li._id, id: li._id, quantity: q }]);
+          const cart = r && r.cart;
+          const now = cart && (cart.lineItems || []).find(x => x._id === li._id);
+          if (now && Number(now.quantity) === Number(q)) return cart;
         } catch (e) {}
         /* update no-op'd — rebuild the line with the endpoints that provably work */
         try { await wix.currentCart.removeLineItemsFromCurrentCart([li._id]); } catch (e) {}
         if (q > 0 && li.catalogReference) {
-          await wix.currentCart.addToCurrentCart({ lineItems: [{ catalogReference: li.catalogReference, quantity: q }] });
+          const r2 = await wix.currentCart.addToCurrentCart({ lineItems: [{ catalogReference: li.catalogReference, quantity: q }] });
+          return (r2 && r2.cart) || null;
         }
+        return null;
       },
       async remove(lineItemId) {
-        await wix.currentCart.removeLineItemsFromCurrentCart([lineItemId]);
+        const r = await wix.currentCart.removeLineItemsFromCurrentCart([lineItemId]);
+        return (r && r.cart) || null;
       },
       async checkout() {
         const { checkoutId } = await wix.currentCart.createCheckoutFromCurrentCart({ channelType: "WEB" });
@@ -2029,7 +2042,7 @@ observeReveals();
           const keys = [];
           const saved = localStorage.getItem("mgn-nl-key");
           if (saved) keys.push(saved);
-          ["email", "emailAddress", "email_1"].forEach(k => { if (!keys.includes(k)) keys.push(k); });
+          ["email_443e", "email", "emailAddress", "email_1"].forEach(k => { if (!keys.includes(k)) keys.push(k); });
           let lastErr;
           for (const k of keys) {
             try {
