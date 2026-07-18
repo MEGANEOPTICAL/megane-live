@@ -1348,6 +1348,24 @@
   </aside>
 </div>
 
+<div class="pmodal" id="cmodal" hidden>
+  <div class="pm-back" data-cmcl></div>
+  <div class="pm-box" style="grid-template-columns:1fr;max-width:460px;">
+    <button class="pm-x" data-cmcl aria-label="Close">×</button>
+    <div class="pm-info" style="gap:14px;">
+      <span class="brand">Contact</span>
+      <h3>MEGANE Optical</h3>
+      <p class="pm-note" style="margin:0;">Westfield Southland, 1239 Nepean Hwy, Cheltenham VIC<br>Mon–Wed 9–5:30 · Thu–Fri 9–8:30 · Sat–Sun 10–5</p>
+      <p class="pm-note" style="margin:0;font-size:15px;color:var(--ink);">enquiry@megane.com.au</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-solid" type="button" id="cm-copy">Copy email</button>
+        <a class="btn" href="mailto:enquiry@megane.com.au">Open mail app</a>
+      </div>
+      <a class="btn-text" href="https://www.instagram.com/megane_optometry/" target="_blank" rel="noopener">Instagram <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</div>
+
 <div class="pmodal" id="pmodal" hidden>
   <div class="pm-back" data-close></div>
   <div class="pm-box">
@@ -1413,6 +1431,7 @@ const BOOKING_URL   = "https://app.ooptify.com/bookings?locationId=b9f726b2-f9c2
 const SHOP_BASE     = "https://shop.megane.com.au";
 const SHOP_ALL      = SHOP_BASE + "/category/all-products";
 const MEMBER_URL    = SHOP_BASE + "/pricing-plans/plans-pricing";
+const BOOK_PAGE     = SHOP_BASE + "/book-online";   /* Wix booking page: has the site header + Home link */
 /* direct per-plan checkout links (Wix dashboard → Pricing Plans → plan → Share).
    When filled, Join buttons skip the duplicate plans page and go straight to checkout. */
 const PLAN_URLS     = { essential:"", advanced:"", complete:"" };
@@ -1421,7 +1440,7 @@ const NEWSLETTER_ENDPOINT = "";  /* plan B: a Formspree form URL */
 /* ▼▼ NEWSLETTER — WIX FORM ID ▼▼ */
 const WIX_NEWSLETTER_FORM_ID = "48179b9b-984c-4882-b5c7-02488c92e848";
 /* ▼▼ NEWSLETTER — CONSENT CHECKBOX FIELD KEY ▼▼  paste the checkbox field's key between the quotes */
-const WIX_NEWSLETTER_CONSENT_KEY = "form_field_de1e";
+const WIX_NEWSLETTER_CONSENT_KEY = "";
 /* ▲▲ NEWSLETTER CONFIG ▲▲ */
 const INSTAGRAM_URL = "https://www.instagram.com/megane_optometry/";
 const VIDEO_URL     = "https://video.wixstatic.com/video/533739_262f574784d64a28a8786ea6b5cf6e0a/1080p/mp4/file.mp4";
@@ -1747,6 +1766,7 @@ document.addEventListener('click',e=>{
   const t=e.target.closest('[data-nav]');
   if(!t) return;
   e.preventDefault();
+  if(t.dataset.nav==='booking'){ closeMenu(); location.href=BOOK_PAGE; return; }
   if(t.dataset.maker){                       /* brand page → pre-filtered shop */
     activeMaker=t.dataset.maker;
     renderSide(); renderShop();
@@ -1821,6 +1841,7 @@ async function refreshCartBadge(){
   if(!wixLive()) return;
   try{
     const c=await window.MGN_CART.get();
+    if(c && c.__unavailable) return;   /* leave the badge alone on a failed read */
     const n=(c&&c.lineItems?c.lineItems:[]).reduce((t,i)=>t+(i.quantity||0),0);
     const b=document.getElementById('cart-n');
     b.hidden=!n; b.textContent=n;
@@ -1845,6 +1866,10 @@ async function renderCartDrawer(pre){
   const box=document.getElementById('cd-items');
   try{
     const c=pre || await window.MGN_CART.get();
+    if(c && c.__unavailable){
+      box.innerHTML='<p class="cd-empty">Cart is waking up — close and try again in a moment.</p>';
+      return;   /* keep the badge as it was; a failed read is not an empty cart */
+    }
     const items=(c&&c.lineItems)||[];
     box.innerHTML=items.length?items.map(cartItemHTML).join(''):'<p class="cd-empty">Your cart is empty — the shelf is not.</p>';
     const sub=c&&c.subtotal&&c.subtotal.amount?('$'+c.subtotal.amount):'—';
@@ -1938,19 +1963,17 @@ window.addEventListener('pageshow',e=>{
   document.body.style.overflow='';
 });
 
-/* Contact: copy the address (with mail-app fallback) — no blank mailto windows */
+/* Contact: opens a proper contact card */
+const cmodal=document.getElementById('cmodal');
 document.addEventListener('click',e=>{
   const c=e.target.closest('[data-copy-email]');
-  if(!c) return;
-  e.preventDefault();
-  const addr='enquiry@megane.com.au';
-  const done=()=>{
-    if(!c.dataset.orig) c.dataset.orig=c.textContent;
-    c.textContent=addr+' — copied ✓';
-    setTimeout(()=>{ c.textContent=c.dataset.orig; },2600);
-  };
+  if(c){ e.preventDefault(); cmodal.hidden=false; document.body.style.overflow='hidden'; return; }
+  if(e.target.closest('[data-cmcl]')){ cmodal.hidden=true; document.body.style.overflow=''; }
+});
+document.getElementById('cm-copy').addEventListener('click',function(){
+  const addr='enquiry@megane.com.au', btn=this;
   if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(addr).then(done).catch(()=>{ location.href='mailto:'+addr; });
+    navigator.clipboard.writeText(addr).then(()=>{ btn.textContent='Copied ✓'; setTimeout(()=>{btn.textContent='Copy email';},2400); });
   } else { location.href='mailto:'+addr; }
 });
 
@@ -2043,7 +2066,14 @@ observeReveals();
         });
         return (r && r.cart) || null;
       },
-      async get() { try { return await wix.currentCart.getCurrentCart(); } catch (e) { return null; } },
+      async get() {
+        try { return await wix.currentCart.getCurrentCart(); }
+        catch (e1) {
+          await new Promise(r => setTimeout(r, 800));
+          try { return await wix.currentCart.getCurrentCart(); }
+          catch (e2) { console.warn("cart read failed twice", e2); return { __unavailable: true }; }
+        }
+      },
       async setLine(li, q) {
         try {
           const r = await wix.currentCart.updateCurrentCartLineItemQuantity([{ _id: li._id, id: li._id, quantity: q }]);
