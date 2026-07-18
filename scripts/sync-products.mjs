@@ -3,7 +3,7 @@
 import { chromium } from 'playwright';
 import { writeFileSync, readFileSync, existsSync } from 'node:fs';
 
-const SHOP_URL = 'https://www.megane.com.au/category/all-products';
+const SHOP_URL = 'https://shop.megane.com.au/category/all-products';
 const BRANDS = ['Naito Kumahachi','Leowl in eye','Kaneko Optical','UNSUIKYO','Masunaga',
                 'ORIENS','EYEVAN','mamuse','MAXIS','Nclan','Kaneko','DITA']; // longest first
 
