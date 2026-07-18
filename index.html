@@ -552,14 +552,15 @@
     background:rgba(27,25,22,.5);backdrop-filter:blur(3px);
     align-items:center;justify-content:center;padding:20px;
   }
-  .lb-overlay.show{display:flex;animation:lbIn .35s ease both;}
+  .lb-overlay.show{display:flex;animation:lbIn .7s ease both;}
   @keyframes lbIn{from{opacity:0;}to{opacity:1;}}
   .lb{
     background:var(--paper);border:1px solid var(--line);
     max-width:430px;width:100%;padding:38px 34px 32px;position:relative;
     animation:lbUp .4s ease both;
   }
-  @keyframes lbUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+  @keyframes lbUp{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:none;}}
+  .lb{animation-duration:.8s;animation-timing-function:cubic-bezier(.16,1,.3,1);}
   @media (prefers-reduced-motion:reduce){.lb-overlay.show,.lb{animation:none;}}
   .lb-close{
     position:absolute;top:10px;right:10px;width:44px;height:44px;
@@ -1324,11 +1325,8 @@
       </div>
     </div>
   </div>
-  <div class="wrap" style="padding-bottom:clamp(56px,9vh,110px);">
-    <div style="border:1px solid var(--line);">
-      <iframe id="book-frame" title="Book an eye test — MEGANE" style="display:block;width:100%;height:82vh;border:0;background:#fff;" loading="lazy"></iframe>
-    </div>
-    <p class="grid-note">Booking not loading above? <a href="" data-book-open style="text-decoration:underline;text-underline-offset:3px;">Open the booking page directly</a>.</p>
+  <div class="wrap" style="padding-bottom:clamp(44px,7vh,80px);">
+    <a class="btn-text" data-nav="home">← Back to home</a>
   </div>
 </section>
 
@@ -1637,7 +1635,6 @@ document.getElementById('maker-tiles').innerHTML = BRANDS.map(b=>`<a class="make
 
 /* external booking (Ooptify) */
 const bookBtn = document.getElementById('book-external');
-document.querySelectorAll('[data-book-open]').forEach(a=>a.href=BOOKING_URL||'#');
 if(BOOKING_URL){
   bookBtn.href = BOOKING_URL;
   const n=document.getElementById('book-note'); if(n) n.style.display='none';
@@ -1692,24 +1689,26 @@ if(STORE_PHOTO){
   document.getElementById('store-section').style.display='none';
 }
 
-/* ---------- newsletter lightbox: opens 10s after load, once per visit ---------- */
-/* (in-memory only here; on the live Wix/production site the platform remembers dismissal) */
+/* ---------- newsletter lightbox: gentle, and remembered across visits ---------- */
 let lbShown=false;
 const lb=document.getElementById('lb');
 const lbStart=Date.now();
-function closeLB(){ lb.classList.remove('show'); }
+function lbSnoozedUntil(){ try{return +localStorage.getItem('mgn-lb-until')||0;}catch(e){return 0;} }
+function lbSnooze(days){ try{localStorage.setItem('mgn-lb-until', Date.now()+days*864e5);}catch(e){} }
+function closeLB(){ lb.classList.remove('show'); lbSnooze(7); }
 function openLB(){
-  if(lbShown) return; lbShown=true;
+  if(lbShown || Date.now()<lbSnoozedUntil()) return;
+  lbShown=true; lbSnooze(7);
   lb.classList.add('show');
 }
-/* engagement-based trigger: 40% scroll depth (after at least 8s on page), or 20s fallback */
+/* engagement-based trigger: half the page read and 25s on site — or a 60s fallback */
 function lbScroll(){
   const d=document.documentElement;
   const depth=(d.scrollTop+innerHeight)/d.scrollHeight;
-  if(depth>=.4 && Date.now()-lbStart>8000){ openLB(); removeEventListener('scroll',lbScroll); }
+  if(depth>=.5 && Date.now()-lbStart>25000){ openLB(); removeEventListener('scroll',lbScroll); }
 }
 addEventListener('scroll',lbScroll,{passive:true});
-setTimeout(openLB,20000);
+setTimeout(openLB,60000);
 document.getElementById('lb-close').addEventListener('click',closeLB);
 lb.addEventListener('click',e=>{ if(e.target===lb) closeLB(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeLB(); });
@@ -1733,7 +1732,6 @@ function showPage(p){
   closeMenu();
   window.scrollTo(0,0);
   observeReveals();
-  if(p==='booking' && BOOKING_URL){ const f=document.getElementById('book-frame'); if(f && !f.src) f.src=BOOKING_URL; }
   try{ history.replaceState(null,'', p==='home' ? location.pathname : '#'+p); }catch(e){}
 }
 /* deep links: megane.com.au/#brands etc. open the right page (used by the shop's menu) */
@@ -1742,7 +1740,7 @@ function goHash(){
   if(h && document.getElementById('page-'+h)) showPage(h);
 }
 window.addEventListener('hashchange',goHash);
-goHash();
+setTimeout(goHash,0);   /* defer past script evaluation — io & handlers exist by then */
 document.addEventListener('click',e=>{
   const t=e.target.closest('[data-nav]');
   if(!t) return;
@@ -1769,13 +1767,18 @@ function openProduct(i){
   note.textContent = live&&!p.oos ? 'Added items wait in your cart — checkout goes straight to payment.' : 'Continues on our online store.';
   buy.href=SHOP_ALL;
   add.textContent='Add to cart'; add.disabled=!!p.oos;
-  buy.textContent='Buy on the online store';
+  if(p.oos){
+    buy.textContent='Contact us'; buy.href='mailto:enquiry@megane.com.au';
+    note.textContent='Out of stock online — visit us in store to try it on, or email us and we\'ll help.';
+  } else {
+    buy.textContent='Buy on the online store';
+  }
   const norm=t=>(t||'').replace(/\s+/g,' ').trim().toLowerCase();
   const oosFeedback=()=>{
     add.textContent='Out of stock online'; add.disabled=true;
-    note.textContent='This frame can\'t be added right now — it\'s out of stock on the online store. Visit us in store, or check it there:';
-    buy.style.display=''; buy.textContent='View on the online store';
-    buy.href=(window.MGN_CART&&window.MGN_CART.slugUrl(p.brand,p.model))||SHOP_ALL;
+    note.textContent='Out of stock online — visit us in store to try it on, or email us and we\'ll help.';
+    buy.style.display=''; buy.textContent='Contact us';
+    buy.href='mailto:enquiry@megane.com.au';
   };
   add.onclick=async ()=>{
     add.textContent='Adding…';
@@ -1919,7 +1922,7 @@ document.getElementById('nl-btn').addEventListener('click',function(){
 });
 document.getElementById('lb-sub').addEventListener('click',function(){
   const email=(document.getElementById('lb-email')||{}).value||'';
-  if(email.trim()) deliverEmail(email.trim()).catch(()=>{});
+  if(email.trim()){ deliverEmail(email.trim()).catch(()=>{}); lbSnooze(30); }
 });
 
 /* returning via browser Back restores the page from cache — reset transient labels */
