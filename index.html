@@ -36,6 +36,7 @@
   button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;}
   a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--vermilion);outline-offset:3px;}
   img{max-width:100%;}
+  [hidden]{display:none !important;}
   .wrap{max-width:1200px;margin:0 auto;padding:0 clamp(20px,4vw,56px);}
   img,video{-webkit-user-drag:none;user-drag:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
   .eyebrow{
@@ -1850,14 +1851,15 @@ document.getElementById('cd-checkout').addEventListener('click',async function()
 window.addEventListener('mgn-wix-ready',()=>{
   cartBtn.hidden=false;
   refreshCartBadge();
-  document.querySelectorAll('.plan-join').forEach(a=>{
-    a.addEventListener('click',function(e){
-      e.preventDefault();
-      const btn=this, orig=btn.textContent;
-      btn.textContent='Opening checkout…';
-      window.MGN_PLANS.join(btn.dataset.plan).catch(()=>{ btn.textContent=orig; window.open(MEMBER_URL,'_blank','noopener'); });
-    });
-  });
+});
+/* plan joins by delegation — immune to script ordering */
+document.addEventListener('click',e=>{
+  const pj=e.target.closest('.plan-join');
+  if(!pj || !wixLive() || !window.MGN_PLANS) return;
+  e.preventDefault();
+  const orig=pj.textContent;
+  pj.textContent='Opening checkout…';
+  window.MGN_PLANS.join(pj.dataset.plan).catch(()=>{ pj.textContent=orig; window.open(MEMBER_URL,'_blank','noopener'); });
 });
 
 /* newsletter: post to endpoint when configured */
@@ -1902,6 +1904,7 @@ observeReveals();
   const CLIENT_ID = "12d75b6a-9d07-4c46-9e7a-3efea62728c9";
   const STORES_APP = "215238eb-22a5-4c36-9e7b-e7c08025e04e";
   const SHOP = "https://shop.megane.com.au";
+  const fixHost = u => (u || "").replace(/^https:\/\/(www\.)?megane\.com\.au/i, SHOP);
   if (!CLIENT_ID) return;
   try {
     const [sdk, storesMod, ecomMod, redirMod, plansMod] = await Promise.all([
@@ -1954,7 +1957,7 @@ observeReveals();
       },
       async get() { try { return await wix.currentCart.getCurrentCart(); } catch (e) { return null; } },
       async setQty(lineItemId, q) {
-        await wix.currentCart.updateCurrentCartLineItemQuantity([{ _id: lineItemId, quantity: q }]);
+        await wix.currentCart.updateCurrentCartLineItemQuantity([{ _id: lineItemId, id: lineItemId, quantity: q }]);
       },
       async remove(lineItemId) {
         await wix.currentCart.removeLineItemsFromCurrentCart([lineItemId]);
@@ -1965,7 +1968,7 @@ observeReveals();
           ecomCheckout: { checkoutId },
           callbacks: { postFlowUrl: location.origin },
         });
-        location.href = redirectSession.fullUrl;
+        location.href = fixHost(redirectSession.fullUrl);
       },
     };
 
@@ -1984,7 +1987,7 @@ observeReveals();
           paidPlansCheckout: { planId: plan._id },
           callbacks: { postFlowUrl: location.origin + "/#member" },
         });
-        location.href = redirectSession.fullUrl;
+        location.href = fixHost(redirectSession.fullUrl);
       },
     };
 
