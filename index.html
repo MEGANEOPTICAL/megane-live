@@ -712,6 +712,40 @@
     .reveal .section-title .w{opacity:1;transform:none;transition:none;}
   }
 
+  /* ---------- cart (Wix Headless) ---------- */
+  .cart-btn{position:relative;background:none;border:none;cursor:pointer;color:var(--ink);padding:6px;display:flex;align-items:center;}
+  .cart-n{
+    position:absolute;top:0;right:-2px;min-width:16px;height:16px;border-radius:8px;
+    background:var(--vermilion);color:#fff;font-family:var(--disp);font-size:10px;
+    display:flex;align-items:center;justify-content:center;padding:0 4px;
+  }
+  .cdrawer{position:fixed;inset:0;z-index:150;}
+  .cdrawer[hidden]{display:none;}
+  .cd-back{position:absolute;inset:0;background:rgba(27,25,22,.5);}
+  .cd-panel{
+    position:absolute;top:0;right:0;bottom:0;width:min(420px,92vw);
+    background:var(--paper);border-left:1px solid var(--line);
+    display:flex;flex-direction:column;
+  }
+  .cd-head{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:18px 20px;border-bottom:1px solid var(--line);
+    font-family:var(--disp);font-size:13px;letter-spacing:.24em;text-transform:uppercase;
+  }
+  .cd-items{flex:1;overflow:auto;padding:10px 20px;}
+  .cd-item{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line);}
+  .cd-item img{width:64px;height:48px;object-fit:contain;mix-blend-mode:multiply;}
+  .cd-item .m{font-size:14px;}
+  .cd-qty{display:flex;align-items:center;gap:8px;margin-top:6px;}
+  .cd-qty button{width:22px;height:22px;border:1px solid var(--line);background:none;cursor:pointer;font-size:13px;line-height:1;color:var(--ink);}
+  .cd-qty span{font-size:13px;min-width:14px;text-align:center;}
+  .cd-rm{background:none;border:none;cursor:pointer;font-size:11px;color:var(--ink-soft);text-decoration:underline;text-underline-offset:3px;margin-top:6px;padding:0;}
+  .cd-p{font-family:var(--disp);font-size:13px;letter-spacing:.06em;}
+  .cd-empty{padding:40px 0;text-align:center;font-size:14px;color:var(--ink-soft);}
+  .cd-foot{border-top:1px solid var(--line);padding:16px 20px calc(16px + env(safe-area-inset-bottom));}
+  .cd-total{display:flex;justify-content:space-between;font-family:var(--disp);font-size:14px;letter-spacing:.1em;margin-bottom:12px;}
+  .plan-join{margin-top:6px;}
+
   /* ---------- round-18 fixes ---------- */
   .news-row button:disabled{opacity:.35;cursor:not-allowed;}
   .care-list .jp{white-space:nowrap;flex-shrink:0;margin-left:14px;}
@@ -803,6 +837,10 @@
       <a data-nav="member">Membership</a>
       <a class="nav-cta" data-nav="booking">Book an eye test</a>
     </nav>
+    <button class="cart-btn" id="cart-btn" type="button" aria-label="Shopping cart" hidden>
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+      <span class="cart-n" id="cart-n" hidden>0</span>
+    </button>
     <button class="burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
   </div>
   <nav class="m-menu" id="m-menu" aria-label="Mobile menu">
@@ -1231,6 +1269,7 @@
           <li>$0 out-of-pocket standard eye exams</li>
           <li>5% off complete prescription pairs</li>
         </ul>
+        <a class="btn btn-solid plan-join" data-plan="essential" href="" target="_blank" rel="noopener">Join Essential</a>
       </div>
       <div class="plan featured">
         <span class="plan-tag">Most popular</span>
@@ -1242,6 +1281,7 @@
           <li>1 × OCT &amp; retinal imaging scan</li>
           <li>2 × clinical care items included</li>
         </ul>
+        <a class="btn btn-solid plan-join" data-plan="advanced" href="" target="_blank" rel="noopener">Join Advanced</a>
       </div>
       <div class="plan">
         <h3>Complete Care</h3>
@@ -1252,6 +1292,7 @@
           <li>Unlimited OCT &amp; retinal imaging</li>
           <li>Specialised clinical items fully covered</li>
         </ul>
+        <a class="btn btn-solid plan-join" data-plan="complete" href="" target="_blank" rel="noopener">Join Complete</a>
       </div>
     </div>
     <p style="margin-top:26px;text-align:center;"><a class="btn btn-solid" href="" data-member target="_blank" rel="noopener">Choose your plan on the online store <span aria-hidden="true">→</span></a></p>
@@ -1288,6 +1329,22 @@
 
 </main>
 
+<div class="cdrawer" id="cdrawer" hidden>
+  <div class="cd-back" data-ccl></div>
+  <aside class="cd-panel" aria-label="Shopping cart">
+    <div class="cd-head">
+      <span>Cart</span>
+      <button class="pm-x" data-ccl aria-label="Close" style="position:static;">×</button>
+    </div>
+    <div class="cd-items" id="cd-items"><p class="cd-empty">Loading…</p></div>
+    <div class="cd-foot">
+      <div class="cd-total"><span>Subtotal</span><span id="cd-total">—</span></div>
+      <button class="btn btn-solid" id="cd-checkout" type="button" style="width:100%;justify-content:center;display:flex;">Checkout</button>
+      <p class="book-note" style="margin-top:10px;">Secure checkout — you'll go straight to payment.</p>
+    </div>
+  </aside>
+</div>
+
 <div class="pmodal" id="pmodal" hidden>
   <div class="pm-back" data-close></div>
   <div class="pm-box">
@@ -1298,8 +1355,9 @@
       <h3 id="pm-model"></h3>
       <p class="pm-price" id="pm-price"></p>
       <p class="pm-note">Made in Japan · fitted in store · lifetime servicing</p>
+      <button class="btn btn-solid" id="pm-add" type="button" hidden>Add to cart</button>
       <a class="btn btn-solid" id="pm-buy" target="_blank" rel="noopener">Buy on the online store</a>
-      <p class="book-note" style="margin-top:12px;">Opens our store in a new tab — this page stays right here.</p>
+      <p class="book-note" id="pm-note" style="margin-top:12px;">Opens our store in a new tab — this page stays right here.</p>
     </div>
   </div>
 </div>
@@ -1355,6 +1413,8 @@ const MEMBER_URL    = SHOP_BASE + "/pricing-plans/plans-pricing";
 /* direct per-plan checkout links (Wix dashboard → Pricing Plans → plan → Share).
    When filled, Join buttons skip the duplicate plans page and go straight to checkout. */
 const PLAN_URLS     = { essential:"", advanced:"", complete:"" };
+const WIX_CLIENT_ID = "12d75b6a-9d07-4c46-9e7a-3efea62728c9";  /* Wix Headless OAuth app */
+const NEWSLETTER_ENDPOINT = "";  /* e.g. a Formspree form URL — until set, Subscribe is visual only */
 const INSTAGRAM_URL = "https://www.instagram.com/megane_optometry/";
 const VIDEO_URL     = "https://video.wixstatic.com/video/533739_262f574784d64a28a8786ea6b5cf6e0a/1080p/mp4/file.mp4";
 const GALLERY       = [   /* Sabae craftsmanship photos (hero image excluded to avoid duplication) */
@@ -1692,7 +1752,21 @@ function openProduct(i){
   document.getElementById('pm-brand').textContent=p.brand;
   document.getElementById('pm-model').textContent=p.model;
   document.getElementById('pm-price').textContent=p.oos?'Sold out — join the waitlist in store':'$'+p.price;
-  document.getElementById('pm-buy').href=SHOP_ALL;
+  const live=wixLive();
+  const add=document.getElementById('pm-add'), buy=document.getElementById('pm-buy'), note=document.getElementById('pm-note');
+  add.hidden=!live||!!p.oos; buy.style.display=(live&&!p.oos)?'none':'';
+  note.textContent = live&&!p.oos ? 'Added items wait in your cart — checkout goes straight to payment.' : 'Opens our store in a new tab — this page stays right here.';
+  buy.href=SHOP_ALL;
+  add.textContent='Add to cart';
+  add.onclick=async ()=>{
+    add.textContent='Adding…';
+    try{ await window.MGN_CART.add(p.brand,p.model); closeProduct(); openCart(); }
+    catch(err){
+      const u=window.MGN_CART&&window.MGN_CART.slugUrl(p.brand,p.model);
+      add.textContent='Add to cart';
+      window.open(u||SHOP_ALL,'_blank','noopener');   /* frame needs options — pick them on the product page */
+    }
+  };
   pmodal.hidden=false; document.body.style.overflow='hidden';
 }
 function closeProduct(){ pmodal.hidden=true; document.body.style.overflow=''; }
@@ -1706,6 +1780,97 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeProduct(); })
 /* deter casual saving of media */
 document.addEventListener('contextmenu',e=>{ if(e.target.closest('img,video')) e.preventDefault(); });
 document.addEventListener('dragstart',e=>{ if(e.target.closest('img')) e.preventDefault(); });
+
+/* ---- Wix Headless UI bindings (module below signals readiness) ---- */
+document.querySelectorAll('.plan-join').forEach(a=>a.href=MEMBER_URL);
+const cartBtn=document.getElementById('cart-btn');
+const cdrawer=document.getElementById('cdrawer');
+const wixLive=()=>document.documentElement.classList.contains('wix-live');
+
+function wixImgUrl(v){
+  const m=/wix:image:\/\/v1\/([^/]+)/.exec(v||'');
+  return m ? 'https://static.wixstatic.com/media/'+m[1] : '';
+}
+async function refreshCartBadge(){
+  if(!wixLive()) return;
+  try{
+    const c=await window.MGN_CART.get();
+    const n=(c&&c.lineItems?c.lineItems:[]).reduce((t,i)=>t+(i.quantity||0),0);
+    const b=document.getElementById('cart-n');
+    b.hidden=!n; b.textContent=n;
+  }catch(e){}
+}
+function cartItemHTML(li){
+  const name=(li.productName&&(li.productName.original||li.productName.translated))||'Item';
+  const price=(li.price&&li.price.amount)?('$'+li.price.amount):'';
+  const img=wixImgUrl(li.image);
+  return `<div class="cd-item">
+    <img src="${img}" alt="" onerror="this.style.visibility='hidden'">
+    <div><span class="m">${name}</span>
+      <div class="cd-qty">
+        <button type="button" data-cq="-1" data-li="${li._id}">−</button><span>${li.quantity}</span><button type="button" data-cq="1" data-li="${li._id}">+</button>
+      </div>
+      <button type="button" class="cd-rm" data-crm="${li._id}">Remove</button>
+    </div>
+    <span class="cd-p">${price}</span>
+  </div>`;
+}
+async function renderCartDrawer(){
+  const box=document.getElementById('cd-items');
+  try{
+    const c=await window.MGN_CART.get();
+    const items=(c&&c.lineItems)||[];
+    box.innerHTML=items.length?items.map(cartItemHTML).join(''):'<p class="cd-empty">Your cart is empty — the shelf is not.</p>';
+    const sub=c&&c.subtotal&&c.subtotal.amount?('$'+c.subtotal.amount):'—';
+    document.getElementById('cd-total').textContent=sub;
+  }catch(e){ box.innerHTML='<p class="cd-empty">Cart unavailable right now.</p>'; }
+  refreshCartBadge();
+}
+function openCart(){ cdrawer.hidden=false; document.body.style.overflow='hidden'; renderCartDrawer(); }
+function closeCart(){ cdrawer.hidden=true; document.body.style.overflow=''; }
+cartBtn.addEventListener('click',openCart);
+document.addEventListener('click',async e=>{
+  if(e.target.closest('[data-ccl]')){ closeCart(); return; }
+  const q=e.target.closest('[data-cq]');
+  if(q){ try{
+      const c=await window.MGN_CART.get();
+      const li=(c.lineItems||[]).find(x=>x._id===q.dataset.li);
+      const nq=Math.max(0,(li?li.quantity:1)+ +q.dataset.cq);
+      if(nq===0) await window.MGN_CART.remove(q.dataset.li);
+      else await window.MGN_CART.setQty(q.dataset.li,nq);
+    }catch(err){} renderCartDrawer(); return; }
+  const r=e.target.closest('[data-crm]');
+  if(r){ try{ await window.MGN_CART.remove(r.dataset.crm); }catch(err){} renderCartDrawer(); }
+});
+document.getElementById('cd-checkout').addEventListener('click',async function(){
+  this.textContent='Opening checkout…';
+  try{ await window.MGN_CART.checkout(); }
+  catch(e){ this.textContent='Checkout'; window.open(SHOP_ALL,'_blank','noopener'); }
+});
+window.addEventListener('mgn-wix-ready',()=>{
+  cartBtn.hidden=false;
+  refreshCartBadge();
+  document.querySelectorAll('.plan-join').forEach(a=>{
+    a.addEventListener('click',function(e){
+      e.preventDefault();
+      const btn=this, orig=btn.textContent;
+      btn.textContent='Opening checkout…';
+      window.MGN_PLANS.join(btn.dataset.plan).catch(()=>{ btn.textContent=orig; window.open(MEMBER_URL,'_blank','noopener'); });
+    });
+  });
+});
+
+/* newsletter: post to endpoint when configured */
+document.getElementById('nl-btn').addEventListener('click',function(){
+  const email=document.getElementById('nl-email').value.trim();
+  const btn=this;
+  if(NEWSLETTER_ENDPOINT){
+    btn.disabled=true; btn.textContent='…';
+    fetch(NEWSLETTER_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({email})})
+      .then(r=>{btn.textContent=r.ok?'Subscribed ✓':'Try again';btn.disabled=r.ok;})
+      .catch(()=>{btn.textContent='Try again';btn.disabled=false;});
+  }
+});
 
 /* subscribe buttons require a valid email first */
 function gateEmail(inputEl,btnEl){
@@ -1730,6 +1895,105 @@ function observeReveals(){
   document.querySelectorAll('.page.on .reveal:not(.in)').forEach(el=>io.observe(el));
 }
 observeReveals();
+</script>
+<script type="module">
+/* ===== Wix Headless bridge: live catalogue IDs, real cart, direct checkout ===== */
+(async () => {
+  const CLIENT_ID = "12d75b6a-9d07-4c46-9e7a-3efea62728c9";
+  const STORES_APP = "215238eb-22a5-4c36-9e7b-e7c08025e04e";
+  const SHOP = "https://shop.megane.com.au";
+  if (!CLIENT_ID) return;
+  try {
+    const [sdk, storesMod, ecomMod, redirMod, plansMod] = await Promise.all([
+      import("https://esm.sh/@wix/sdk@1"),
+      import("https://esm.sh/@wix/stores@1"),
+      import("https://esm.sh/@wix/ecom@1"),
+      import("https://esm.sh/@wix/redirects@1"),
+      import("https://esm.sh/@wix/pricing-plans@1"),
+    ]);
+    let tokens = null;
+    try { tokens = JSON.parse(localStorage.getItem("mgn-wix-tokens") || "null"); } catch (e) {}
+    const wix = sdk.createClient({
+      auth: sdk.OAuthStrategy({ clientId: CLIENT_ID, tokens: tokens || undefined }),
+      modules: {
+        products: storesMod.products,
+        currentCart: ecomMod.currentCart,
+        redirects: redirMod.redirects,
+        plans: plansMod.plans,
+      },
+    });
+    if (!tokens) {
+      try {
+        tokens = await wix.auth.generateVisitorTokens();
+        wix.auth.setTokens(tokens);
+        localStorage.setItem("mgn-wix-tokens", JSON.stringify(tokens));
+      } catch (e) {}
+    }
+
+    /* product name -> {id, slug} map for cart adds */
+    const map = {};
+    try {
+      const res = await wix.products.queryProducts().limit(100).find();
+      (res.items || []).forEach(pr => {
+        map[(pr.name || "").trim().toLowerCase()] = { id: pr._id, slug: pr.slug };
+      });
+    } catch (e) { console.warn("product query failed", e); }
+
+    window.MGN_CART = {
+      _find(brand, model) { return map[(brand + " " + model).trim().toLowerCase()]; },
+      slugUrl(brand, model) {
+        const hit = this._find(brand, model);
+        return hit ? SHOP + "/product-page/" + hit.slug : null;
+      },
+      async add(brand, model) {
+        const hit = this._find(brand, model);
+        if (!hit) throw new Error("not in catalogue");
+        await wix.currentCart.addToCurrentCart({
+          lineItems: [{ catalogReference: { appId: STORES_APP, catalogItemId: hit.id }, quantity: 1 }],
+        });
+      },
+      async get() { try { return await wix.currentCart.getCurrentCart(); } catch (e) { return null; } },
+      async setQty(lineItemId, q) {
+        await wix.currentCart.updateCurrentCartLineItemQuantity([{ _id: lineItemId, quantity: q }]);
+      },
+      async remove(lineItemId) {
+        await wix.currentCart.removeLineItemsFromCurrentCart([lineItemId]);
+      },
+      async checkout() {
+        const { checkoutId } = await wix.currentCart.createCheckoutFromCurrentCart({ channelType: "WEB" });
+        const { redirectSession } = await wix.redirects.createRedirectSession({
+          ecomCheckout: { checkoutId },
+          callbacks: { postFlowUrl: location.origin },
+        });
+        location.href = redirectSession.fullUrl;
+      },
+    };
+
+    /* membership plans: name-fragment -> direct plan checkout */
+    let planList = [];
+    try {
+      const pr = await wix.plans.queryPublicPlans().find();
+      planList = pr.items || pr.plans || [];
+    } catch (e) { console.warn("plans query failed", e); }
+    window.MGN_PLANS = {
+      list: planList,
+      async join(frag) {
+        const plan = planList.find(pl => (pl.name || "").toLowerCase().includes(frag));
+        if (!plan) throw new Error("plan not found");
+        const { redirectSession } = await wix.redirects.createRedirectSession({
+          paidPlansCheckout: { planId: plan._id },
+          callbacks: { postFlowUrl: location.origin + "/#member" },
+        });
+        location.href = redirectSession.fullUrl;
+      },
+    };
+
+    document.documentElement.classList.add("wix-live");
+    window.dispatchEvent(new Event("mgn-wix-ready"));
+  } catch (e) {
+    console.warn("Wix headless unavailable — falling back to store links", e);
+  }
+})();
 </script>
 </body>
 </html>
