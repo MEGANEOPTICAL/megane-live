@@ -1324,6 +1324,12 @@
       </div>
     </div>
   </div>
+  <div class="wrap" style="padding-bottom:clamp(56px,9vh,110px);">
+    <div style="border:1px solid var(--line);">
+      <iframe id="book-frame" title="Book an eye test — MEGANE" style="display:block;width:100%;height:82vh;border:0;background:#fff;" loading="lazy"></iframe>
+    </div>
+    <p class="grid-note">Booking not loading above? <a href="" data-book-open style="text-decoration:underline;text-underline-offset:3px;">Open the booking page directly</a>.</p>
+  </div>
 </section>
 
 </main>
@@ -1631,6 +1637,7 @@ document.getElementById('maker-tiles').innerHTML = BRANDS.map(b=>`<a class="make
 
 /* external booking (Ooptify) */
 const bookBtn = document.getElementById('book-external');
+document.querySelectorAll('[data-book-open]').forEach(a=>a.href=BOOKING_URL||'#');
 if(BOOKING_URL){
   bookBtn.href = BOOKING_URL;
   const n=document.getElementById('book-note'); if(n) n.style.display='none';
@@ -1726,6 +1733,7 @@ function showPage(p){
   closeMenu();
   window.scrollTo(0,0);
   observeReveals();
+  if(p==='booking' && BOOKING_URL){ const f=document.getElementById('book-frame'); if(f && !f.src) f.src=BOOKING_URL; }
   try{ history.replaceState(null,'', p==='home' ? location.pathname : '#'+p); }catch(e){}
 }
 /* deep links: megane.com.au/#brands etc. open the right page (used by the shop's menu) */
@@ -1739,7 +1747,6 @@ document.addEventListener('click',e=>{
   const t=e.target.closest('[data-nav]');
   if(!t) return;
   e.preventDefault();
-  if(t.dataset.nav==='booking' && BOOKING_URL){ closeMenu(); location.href=BOOKING_URL; return; }
   if(t.dataset.maker){                       /* brand page → pre-filtered shop */
     activeMaker=t.dataset.maker;
     renderSide(); renderShop();
@@ -1761,15 +1768,25 @@ function openProduct(i){
   add.hidden=!live||!!p.oos; buy.style.display=(live&&!p.oos)?'none':'';
   note.textContent = live&&!p.oos ? 'Added items wait in your cart — checkout goes straight to payment.' : 'Continues on our online store.';
   buy.href=SHOP_ALL;
-  add.textContent='Add to cart';
+  add.textContent='Add to cart'; add.disabled=!!p.oos;
+  buy.textContent='Buy on the online store';
+  const norm=t=>(t||'').replace(/\s+/g,' ').trim().toLowerCase();
+  const oosFeedback=()=>{
+    add.textContent='Out of stock online'; add.disabled=true;
+    note.textContent='This frame can\'t be added right now — it\'s out of stock on the online store. Visit us in store, or check it there:';
+    buy.style.display=''; buy.textContent='View on the online store';
+    buy.href=(window.MGN_CART&&window.MGN_CART.slugUrl(p.brand,p.model))||SHOP_ALL;
+  };
   add.onclick=async ()=>{
     add.textContent='Adding…';
-    try{ const cart=await window.MGN_CART.add(p.brand,p.model); closeProduct(); openCart(cart||undefined); }
-    catch(err){
-      const u=window.MGN_CART&&window.MGN_CART.slugUrl(p.brand,p.model);
-      add.textContent='Add to cart';
-      location.href=u||SHOP_ALL;   /* frame needs options — pick them on the product page */
+    try{
+      const cart=await window.MGN_CART.add(p.brand,p.model);
+      const want=norm(p.brand+' '+p.model);
+      const found=cart&&(cart.lineItems||[]).some(li=>norm(li.productName&&li.productName.original)===want);
+      if(found){ closeProduct(); openCart(cart); }
+      else oosFeedback();
     }
+    catch(err){ oosFeedback(); }
   };
   pmodal.hidden=false; document.body.style.overflow='hidden';
 }
@@ -1857,15 +1874,33 @@ document.getElementById('cd-checkout').addEventListener('click',async function()
 window.addEventListener('mgn-wix-ready',()=>{
   cartBtn.hidden=false;
   refreshCartBadge();
+  /* overlay live stock onto the lookbook: what Wix can't sell shows as Sold out */
+  try{
+    let changed=false;
+    PRODUCTS.forEach(p=>{
+      const hit=window.MGN_STOCK && window.MGN_STOCK[(p.brand+' '+p.model).trim().toLowerCase()];
+      if(hit && hit.inStock===false && !p.oos){ p.oos=true; changed=true; }
+    });
+    if(changed) renderShop();
+  }catch(e){}
 });
-/* plan joins by delegation — immune to script ordering */
+/* plan joins by delegation — click is always intercepted; waits for the bridge if needed */
+function whenWixReady(timeoutMs){
+  return new Promise((res,rej)=>{
+    if(window.MGN_PLANS) return res();
+    const t=setTimeout(()=>rej(new Error('timeout')),timeoutMs);
+    window.addEventListener('mgn-wix-ready',()=>{clearTimeout(t);res();},{once:true});
+  });
+}
 document.addEventListener('click',e=>{
   const pj=e.target.closest('.plan-join');
-  if(!pj || !wixLive() || !window.MGN_PLANS) return;
+  if(!pj) return;
   e.preventDefault();
   const orig=pj.textContent;
   pj.textContent='Opening checkout…';
-  window.MGN_PLANS.join(pj.dataset.plan).catch(()=>{ pj.textContent=orig; location.href=MEMBER_URL; });
+  whenWixReady(8000)
+    .then(()=>window.MGN_PLANS.join(pj.dataset.plan))
+    .catch(()=>{ pj.textContent=orig; location.href=MEMBER_URL; });
 });
 
 /* newsletter delivery: Wix Form → Formspree → visual-only */
@@ -1892,6 +1927,10 @@ window.addEventListener('pageshow',e=>{
   if(!e.persisted) return;
   document.querySelectorAll('.plan-join').forEach(a=>{a.textContent='Join '+a.dataset.plan.charAt(0).toUpperCase()+a.dataset.plan.slice(1);});
   const co=document.getElementById('cd-checkout'); if(co) co.textContent='Checkout';
+  /* unfreeze: close any overlay and release the scroll lock left from before navigation */
+  try{ cdrawer.hidden=true; }catch(err){}
+  try{ pmodal.hidden=true; }catch(err){}
+  document.body.style.overflow='';
 });
 
 /* subscribe buttons require a valid email first */
@@ -1960,8 +1999,12 @@ observeReveals();
     try {
       const res = await wix.products.queryProducts().limit(100).find();
       (res.items || []).forEach(pr => {
-        map[(pr.name || "").trim().toLowerCase()] = { id: pr._id, slug: pr.slug };
+        map[(pr.name || "").trim().toLowerCase()] = {
+          id: pr._id, slug: pr.slug,
+          inStock: !(pr.stock && pr.stock.inStock === false),
+        };
       });
+      window.MGN_STOCK = map;
     } catch (e) { console.warn("product query failed", e); }
 
     window.MGN_CART = {
