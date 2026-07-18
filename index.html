@@ -1596,9 +1596,9 @@ fetch('products.json',{cache:'no-store'})
     PRODUCTS.length=0; data.forEach(p=>PRODUCTS.push(p));
     makers.length=0; makers.push('All Products',...new Set(PRODUCTS.map(p=>p.brand)));
     renderSide(); renderShop();
-    const seen=new Set(), feat=[];
+    const seen2=new Set(), feat=[];
     for(const p of PRODUCTS){
-      if(!p.oos && !seen.has(p.brand)){feat.push(p);seen.add(p.brand);}
+      if(!p.oos && !seen2.has(p.brand)){feat.push(p);seen2.add(p.brand);}
       if(feat.length===3) break;
     }
     if(feat.length===3) document.getElementById('home-cards').innerHTML=feat.map(cardHTML).join('');
