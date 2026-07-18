@@ -714,6 +714,22 @@
     .reveal .section-title .w{opacity:1;transform:none;transition:none;}
   }
 
+  /* ---------- contact card above everything ---------- */
+  #cmodal{z-index:165;}
+
+  /* ---------- full-screen booking view ---------- */
+  .bookview{position:fixed;inset:0;z-index:170;background:#fff;}
+  .bookview[hidden]{display:none;}
+  .bookview iframe{display:block;width:100%;height:100%;border:0;}
+  .bv-home{
+    position:absolute;top:14px;right:16px;z-index:2;cursor:pointer;
+    background:var(--ink);color:var(--ivory);border:none;
+    font-family:var(--disp);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;
+    padding:12px 18px;box-shadow:0 6px 18px rgba(27,25,22,.25);
+  }
+  .bv-home:hover{background:var(--vermilion);color:#fff;}
+  @media(max-width:640px){.bv-home{top:10px;right:10px;padding:10px 14px;font-size:10.5px;}}
+
   /* ---------- cart (Wix Headless) ---------- */
   .cart-btn{position:relative;background:none;border:none;cursor:pointer;color:var(--ink);padding:6px;display:flex;align-items:center;}
   .cart-n{
@@ -1348,6 +1364,11 @@
   </aside>
 </div>
 
+<div class="bookview" id="bookview" hidden>
+  <iframe id="bv-frame" title="Book an eye test — MEGANE"></iframe>
+  <button class="bv-home" id="bv-home" type="button">MEGANE&ensp;·&ensp;Back to home</button>
+</div>
+
 <div class="pmodal" id="cmodal" hidden>
   <div class="pm-back" data-cmcl></div>
   <div class="pm-box" style="grid-template-columns:1fr;max-width:460px;">
@@ -1431,7 +1452,6 @@ const BOOKING_URL   = "https://app.ooptify.com/bookings?locationId=b9f726b2-f9c2
 const SHOP_BASE     = "https://shop.megane.com.au";
 const SHOP_ALL      = SHOP_BASE + "/category/all-products";
 const MEMBER_URL    = SHOP_BASE + "/pricing-plans/plans-pricing";
-const BOOK_PAGE     = SHOP_BASE + "/book-online";   /* Wix booking page: has the site header + Home link */
 /* direct per-plan checkout links (Wix dashboard → Pricing Plans → plan → Share).
    When filled, Join buttons skip the duplicate plans page and go straight to checkout. */
 const PLAN_URLS     = { essential:"", advanced:"", complete:"" };
@@ -1440,7 +1460,7 @@ const NEWSLETTER_ENDPOINT = "";  /* plan B: a Formspree form URL */
 /* ▼▼ NEWSLETTER — WIX FORM ID ▼▼ */
 const WIX_NEWSLETTER_FORM_ID = "48179b9b-984c-4882-b5c7-02488c92e848";
 /* ▼▼ NEWSLETTER — CONSENT CHECKBOX FIELD KEY ▼▼  paste the checkbox field's key between the quotes */
-const WIX_NEWSLETTER_CONSENT_KEY = "";
+const WIX_NEWSLETTER_CONSENT_KEY = "form_field_de1e";
 /* ▲▲ NEWSLETTER CONFIG ▲▲ */
 const INSTAGRAM_URL = "https://www.instagram.com/megane_optometry/";
 const VIDEO_URL     = "https://video.wixstatic.com/video/533739_262f574784d64a28a8786ea6b5cf6e0a/1080p/mp4/file.mp4";
@@ -1766,7 +1786,7 @@ document.addEventListener('click',e=>{
   const t=e.target.closest('[data-nav]');
   if(!t) return;
   e.preventDefault();
-  if(t.dataset.nav==='booking'){ closeMenu(); location.href=BOOK_PAGE; return; }
+  if(t.dataset.nav==='booking' && BOOKING_URL){ closeMenu(); openBookView(); return; }
   if(t.dataset.maker){                       /* brand page → pre-filtered shop */
     activeMaker=t.dataset.maker;
     renderSide(); renderShop();
@@ -1821,7 +1841,7 @@ document.addEventListener('click',e=>{
   if(c){ e.preventDefault(); openProduct(+c.dataset.idx); return; }
   if(e.target.closest('[data-close]')) closeProduct();
 });
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeProduct(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeProduct(); closeBookView(); } });
 
 /* deter casual saving of media */
 document.addEventListener('contextmenu',e=>{ if(e.target.closest('img,video')) e.preventDefault(); });
@@ -1879,9 +1899,9 @@ async function renderCartDrawer(pre){
     b.hidden=!n; b.textContent=n;
   }catch(e){ box.innerHTML='<p class="cd-empty">Cart unavailable right now.</p>'; }
 }
-function openCart(cart){ cdrawer.hidden=false; document.body.style.overflow='hidden'; renderCartDrawer(cart); }
+function openCart(cart){ cdrawer.hidden=false; document.body.style.overflow='hidden'; renderCartDrawer(cart && cart.lineItems ? cart : undefined); }
 function closeCart(){ cdrawer.hidden=true; document.body.style.overflow=''; }
-cartBtn.addEventListener('click',openCart);
+cartBtn.addEventListener('click',()=>openCart());
 document.addEventListener('click',async e=>{
   if(e.target.closest('[data-ccl]')){ closeCart(); return; }
   const q=e.target.closest('[data-cq]');
@@ -1960,14 +1980,25 @@ window.addEventListener('pageshow',e=>{
   /* unfreeze: close any overlay and release the scroll lock left from before navigation */
   try{ cdrawer.hidden=true; }catch(err){}
   try{ pmodal.hidden=true; }catch(err){}
+  try{ bookview.hidden=true; }catch(err){}
   document.body.style.overflow='';
 });
+
+/* full-screen booking view */
+const bookview=document.getElementById('bookview');
+function openBookView(){
+  const f=document.getElementById('bv-frame');
+  if(!f.src) f.src=BOOKING_URL;
+  bookview.hidden=false; document.body.style.overflow='hidden';
+}
+function closeBookView(){ bookview.hidden=true; document.body.style.overflow=''; }
+document.getElementById('bv-home').addEventListener('click',closeBookView);
 
 /* Contact: opens a proper contact card */
 const cmodal=document.getElementById('cmodal');
 document.addEventListener('click',e=>{
   const c=e.target.closest('[data-copy-email]');
-  if(c){ e.preventDefault(); cmodal.hidden=false; document.body.style.overflow='hidden'; return; }
+  if(c){ e.preventDefault(); closeProduct(); cmodal.hidden=false; document.body.style.overflow='hidden'; return; }
   if(e.target.closest('[data-cmcl]')){ cmodal.hidden=true; document.body.style.overflow=''; }
 });
 document.getElementById('cm-copy').addEventListener('click',function(){
