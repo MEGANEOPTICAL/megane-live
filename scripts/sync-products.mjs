@@ -38,8 +38,7 @@ const items = await page.$$eval('[data-hook="product-item-root"]', els =>
     const name  = q('[data-hook="product-item-name"]')?.textContent?.trim() || '';
     const price = q('[data-hook="product-item-price-to-pay"], [data-hook="product-price"]')?.textContent?.trim() || '';
     const img   = q('img')?.src || '';
-    const oos   = !!q('[data-hook="product-item-out-of-stock"]') ||
-                  /out of stock/i.test(el.textContent || '');
+    const oos   = !!q('[data-hook="product-item-out-of-stock"]');
     return { name, price, img, oos };
   })
 );
@@ -52,7 +51,7 @@ const products = items
   .map(p => {
     const { brand, model } = splitName(p.name);
     const price = parseFloat((p.price.match(/[\d,]+(\.\d+)?/) || ['0'])[0].replace(/,/g, '')) || null;
-    return { brand, model, price, imgUrl: p.img.split('?')[0], oos: p.oos || !price };
+    return { brand, model, price, imgUrl: p.img.split('?')[0], oos: !!p.oos };
   });
 
 if (products.length < 5) {
