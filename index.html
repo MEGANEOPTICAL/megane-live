@@ -1798,6 +1798,7 @@ document.addEventListener('click',e=>{
   if(!t) return;
   e.preventDefault();
   if(t.dataset.nav==='booking' && BOOKING_URL){ closeMenu(); openBookView(); return; }
+  if(t.dataset.nav==='shop'){ closeMenu(); location.href=SHOP_ALL; return; }
   if(t.dataset.maker){                       /* brand page → pre-filtered shop */
     activeMaker=t.dataset.maker;
     renderSide(); renderShop();
@@ -1814,9 +1815,9 @@ function openProduct(i){
   document.getElementById('pm-brand').textContent=p.brand;
   document.getElementById('pm-model').textContent=p.model;
   document.getElementById('pm-price').textContent=p.oos?'Sold out — join the waitlist in store':'$'+p.price;
-  const live=wixLive();
+  const live=false;   /* on-site cart retired — the store handles purchasing */
   const add=document.getElementById('pm-add'), buy=document.getElementById('pm-buy'), note=document.getElementById('pm-note');
-  add.hidden=!live||!!p.oos; buy.style.display=(live&&!p.oos)?'none':'';
+  add.hidden=true; buy.style.display='';
   note.textContent = live&&!p.oos ? 'Added items wait in your cart — checkout goes straight to payment.' : 'Continues on our online store.';
   buy.href=SHOP_ALL;
   add.textContent='Add to cart'; add.disabled=!!p.oos;
@@ -1955,8 +1956,6 @@ document.getElementById('cd-checkout').addEventListener('click',async function()
   catch(e){ this.textContent='Checkout'; location.href=SHOP_ALL; }
 });
 window.addEventListener('mgn-wix-ready',()=>{
-  cartBtn.hidden=false;
-  refreshCartBadge();
   /* live stock is authoritative: it both flags AND clears Sold out from the lookbook */
   try{
     let changed=false;
