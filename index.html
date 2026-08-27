@@ -1957,12 +1957,15 @@ document.getElementById('cd-checkout').addEventListener('click',async function()
 window.addEventListener('mgn-wix-ready',()=>{
   cartBtn.hidden=false;
   refreshCartBadge();
-  /* overlay live stock onto the lookbook: what Wix can't sell shows as Sold out */
+  /* live stock is authoritative: it both flags AND clears Sold out from the lookbook */
   try{
     let changed=false;
     PRODUCTS.forEach(p=>{
       const hit=window.MGN_STOCK && window.MGN_STOCK[(p.brand+' '+p.model).trim().toLowerCase()];
-      if(hit && hit.inStock===false && !p.oos){ p.oos=true; changed=true; }
+      if(hit && typeof hit.inStock==='boolean'){
+        const v=!hit.inStock;
+        if(p.oos!==v){ p.oos=v; changed=true; }
+      }
     });
     if(changed) renderShop();
   }catch(e){}
