@@ -37,9 +37,9 @@
   {
     "brand": "Nclan",
     "model": "NC-005A",
-    "price": 349,
+    "price": null,
     "imgUrl": "https://static.wixstatic.com/media/533739_3c377cb068c44616b42d7d87d44d8aa6~mv2.png/v1/fill/w_230,h_230,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/533739_3c377cb068c44616b42d7d87d44d8aa6~mv2.png",
-    "oos": false
+    "oos": true
   },
   {
     "brand": "Nclan",
